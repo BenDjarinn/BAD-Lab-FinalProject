@@ -1,5 +1,5 @@
 package Main;
-import javax.swing.text.View;
+import Model.Database;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import View.LoginView;
@@ -12,11 +12,17 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        LoginView loginApp = new LoginView(); // Membuat objek dari kelas Login
-        try {
-            loginApp.start(primaryStage); // Memanggil metode start di objek Login
+    	
+    	LoginView loginApp = new LoginView(primaryStage); 
+        
+    	try {
+            loginApp.start(primaryStage); 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    	
+    	
     }
 }
+
+

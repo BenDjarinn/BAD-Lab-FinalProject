@@ -1,0 +1,9 @@
+Open the Application Guideline
+
+1. Install JavaFX, link (https://gluonhq.com/products/javafx/),
+2. Open your IDE, Eclipse IDE more recommended
+3. Right Click on Project Folder, go to Properties, choose Libraries Tab, click on Modulepath, and click "Add External Jars" button to add JavaFX that has downloaded before
+4. After JavaFX added, right click again on the Project Follder, choose 'Run/Debug', choose Run Configuration, select 'Argument Tab', go to VM arguments and add the following path (adjust with where you save the path or the location of your JavaFX SDK before):
+--module-path /path/to/javafx-sdk/lib --add-modules javafx.controls,javafx.fxml
+5. After that, find Main.java file and run it
+6. Enjoy!

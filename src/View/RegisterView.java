@@ -1,126 +1,232 @@
 package View;
 
+import Controller.RegisterController;
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
 
-public class RegisterView extends Application{
-
-	private Scene scene;
-	private BorderPane bp;
-	private FlowPane fp;
-	private GridPane gp;
-	private Label registerLbl;
-	private Label usernameLbl;
-	private Label emailLbl;
-	private Label passwordLbl;
-	private Label confirmLbl;
-	private Label pnumbLbl;	
-	private Label addressLbl;
-	private Label genderLbl;	
-	private Label descLbl;	
-	private Label loginLbl;	
-	private RadioButton maleBtn;	
-	private RadioButton femaleBtn;	
-	private TextField usernameTF;
-	private TextField emailTF;
-	private PasswordField passwordTF;
-	private PasswordField confirmTF;
-	private TextField pnumbTF;
-	private TextArea addressTA;
-	private CheckBox alltermsBtn;
-	private Button registerBtn;
+public class RegisterView extends Application {
 	
+	String userRole = "Customer";
+	private String selectedGender;
 	
 
-	public static void main1(String[] args) {
-		// TODO Auto-generated method stub
-		launch(args);
+    public RegisterView(Stage stage) {
+        try {
+            this.start(stage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("Register");
+
+        VBox root = new VBox();
+        
+        root.setAlignment(Pos.CENTER);  
+
+        AnchorPane anchorPane = new AnchorPane();
+        root.getChildren().add(anchorPane);
+
+        Button registerButton = new Button("Register");
+        registerButton.setLayoutX(225);
+        registerButton.setLayoutY(470);
+        registerButton.setMinWidth(100);
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setLayoutX(226);
+        passwordField.setLayoutY(112);
+        passwordField.setPrefWidth(400);
+
+        ToggleGroup genderToggleGroup = new ToggleGroup();
+
+        RadioButton maleRadioButton = new RadioButton("Male");
+        maleRadioButton.setLayoutX(224);
+        maleRadioButton.setLayoutY(390);
+        maleRadioButton.setToggleGroup(genderToggleGroup);
+
+        RadioButton femaleRadioButton = new RadioButton("Female");
+        femaleRadioButton.setLayoutX(300);
+        femaleRadioButton.setLayoutY(390);
+        femaleRadioButton.setToggleGroup(genderToggleGroup);
+       
+
+        TextArea addressTextArea = new TextArea();
+        addressTextArea.setLayoutX(225);
+        addressTextArea.setLayoutY(224);
+
+        TextField usernameTextField = new TextField();
+        usernameTextField.setLayoutX(226);
+        usernameTextField.setLayoutY(82);
+        usernameTextField.setPrefWidth(400);
+
+        Label usernameLabel = new Label("Username : ");
+        usernameLabel.setLayoutX(95);
+        usernameLabel.setLayoutY(88);
+
+        Label passwordLabel = new Label("Password : ");
+        passwordLabel.setLayoutX(95);
+        passwordLabel.setLayoutY(119);
+
+        PasswordField confirmPasswordField = new PasswordField();
+        confirmPasswordField.setLayoutX(226);
+        confirmPasswordField.setLayoutY(145);
+        confirmPasswordField.setPrefWidth(400);
+
+        Label confirmPasswordLabel = new Label("Confirm Password : ");
+        confirmPasswordLabel.setLayoutX(95);
+        confirmPasswordLabel.setLayoutY(154);
+
+        Label phoneNumberLabel = new Label("Phone Number : ");
+        phoneNumberLabel.setLayoutX(95);
+        phoneNumberLabel.setLayoutY(180);
+
+        TextField phoneNumberTextField = new TextField();
+        phoneNumberTextField.setLayoutX(226);
+        phoneNumberTextField.setLayoutY(180);
+        phoneNumberTextField.setPrefWidth(400);
+
+        CheckBox termsCheckBox = new CheckBox("I agree to all terms and conditions");
+        termsCheckBox.setLayoutX(226);
+        termsCheckBox.setLayoutY(415);
+
+        Label addressLabel = new Label("Address : ");
+        addressLabel.setLayoutX(96);
+        addressLabel.setLayoutY(225);
+        addressTextArea.setPrefHeight(150);
+        addressTextArea.setPrefWidth(400);
+
+        Label genderLabel = new Label("Gender : ");
+        genderLabel.setLayoutX(95);
+        genderLabel.setLayoutY(390);
+
+        Label haveAccountLabel = new Label("Have an account?");
+        haveAccountLabel.setLayoutX(226);
+        haveAccountLabel.setLayoutY(440);
+
+        Label loginLabel = new Label("Login here");
+        loginLabel.setLayoutX(335);
+        loginLabel.setLayoutY(440);
+        loginLabel.setTextFill(javafx.scene.paint.Color.valueOf("#002fff"));
+        loginLabel.setUnderline(true);
+        
+        loginLabel.setOnMouseClicked(event -> {
+	        if (event.getButton() == MouseButton.PRIMARY) { 
+	        	 try {
+	 	            new LoginView(primaryStage);
+	 	        } catch (Exception e) {
+	 	            e.printStackTrace();
+	 	        }
+	        }
+	    });
+        
+        registerButton.setOnAction(event -> {
+        	String username = usernameTextField.getText().trim();
+        	String password = passwordField.getText().trim();
+        	String confirmPassword = confirmPasswordField.getText().trim();
+        	String phoneNumber = phoneNumberTextField.getText().trim();
+        	String address = addressTextArea.getText().trim();
+        	String userID = RegisterController.getInstance().generateNextUserID();
+        	RadioButton selectedRadioButton;
+            
+            if (maleRadioButton.isSelected()) {
+                selectedRadioButton = maleRadioButton;
+            } else {
+                selectedRadioButton = femaleRadioButton;
+            }
+            
+            selectedGender = selectedRadioButton.getText();
+            
+
+        	
+            if (username.isEmpty() || password.isEmpty() ||
+            		confirmPassword.isEmpty() || phoneNumber.isEmpty() ||
+            		address.isEmpty() || (!maleRadioButton.isSelected() && !femaleRadioButton.isSelected()) || !termsCheckBox.isSelected()) {
+            	showAlert("All fields must be filled");
+            } 
+            else if(RegisterController.getInstance().isUsernameUnique(username) == false) {
+            	showAlert("Username must be unique");
+            }
+            else if(username.length() < 5 || username.length() > 20) {
+            	showAlert("Username must be 5-20 characters");
+            }
+            else if (!password.matches("^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]+$")) {
+                showAlert("Password must be alphanumeric");
+            }
+            else if(password.length() < 5) {
+            	showAlert("Password must be at least 5 characters");
+            }
+            else if(!password.equals(confirmPassword)) {
+            	showAlert("Confirm password must equals to password.");
+            }
+            else if (phoneNumber.matches("^[a-zA-Z0-9]*$")) {
+                showAlert("Phone Number must be numeric.");
+            }
+            else if(!phoneNumber.matches("\\+62[0-9]+")) {
+            	showAlert("Phone number must start with ‘+62’.");
+            }
+            else {
+            	showSuccessAlert("Registered Successfully!");
+            	RegisterController.getInstance().saveUserToDatabase(userID, username, password, userRole, address, phoneNumber, selectedGender);
+            	openLoginScene(primaryStage);
+            }
+            
+            
+        });
+
+        Label titleLabel = new Label("Register");
+        titleLabel.setLayoutX(320);
+        titleLabel.setLayoutY(20);
+        titleLabel.setFont(new Font("System Bold", 30));
+
+        BorderPane borderPane = new BorderPane();
+        anchorPane.getChildren().addAll(
+                registerButton, passwordField, maleRadioButton, femaleRadioButton,
+                addressTextArea, usernameTextField, usernameLabel, passwordLabel,
+                confirmPasswordField, confirmPasswordLabel,phoneNumberLabel,
+                phoneNumberTextField, termsCheckBox, addressLabel, genderLabel, haveAccountLabel,
+                loginLabel, titleLabel, borderPane
+        );
+
+        Scene scene = new Scene(root, 800, 600);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+    
+    private void showAlert(String message) {
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setContentText(message);
+        alert.show();
 	}
-	
-	public RegisterView(Stage stage) {
-		try {
-			this.start(stage);
-		} 
-		catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    
+    private void openLoginScene(Stage stage) {
+        try {
+            new LoginView(stage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void showSuccessAlert(String message) {
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("Success");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
 
-	private void initialize() {
-		bp = new BorderPane();
-		fp = new FlowPane();
-		gp = new GridPane();
-		bp.setCenter(gp);
-		registerLbl = new Label("Register");
-		usernameLbl = new Label("Username");
-		emailLbl = new Label("Email");
-		passwordLbl = new Label("Password");
-		confirmLbl = new Label("Confirm Password");
-		pnumbLbl = new Label("Phone Number");
-		addressLbl = new Label("Address");
-		genderLbl = new Label("Gender");
-		descLbl = new Label("Have an account?");
-		loginLbl = new Label(" login here");
-		usernameTF = new TextField();
-		emailTF = new TextField();
-		passwordTF = new PasswordField();
-		confirmTF = new PasswordField();
-		pnumbTF = new TextField();
-		addressTA = new TextArea();
-		maleBtn = new RadioButton("male");
-		femaleBtn = new RadioButton("female");
-		alltermsBtn = new CheckBox("i agree to all terms and condition");
-		gp.add(registerLbl, 0, 0);
-		gp.add(usernameLbl, 0, 1);
-		gp.add(usernameTF, 1, 1);
-		gp.add(emailLbl, 0, 2);
-		gp.add(emailTF, 1, 2);
-		gp.add(passwordLbl, 0, 3);
-		gp.add(passwordTF, 1, 3);
-		gp.add(confirmLbl, 0, 4);
-		gp.add(confirmTF, 1, 4);
-		gp.add(pnumbLbl, 0, 5);
-		gp.add(pnumbTF, 1, 5);
-		gp.add(addressLbl, 0, 6);
-		gp.add(addressTA, 1, 6);
-		gp.add(genderLbl, 0, 7);
-		gp.add(maleBtn, 1, 7);
-		gp.add(femaleBtn, 2, 7);
-		gp.add(alltermsBtn, 0, 8);
-		gp.add(descLbl, 0, 9);
-		gp.add(loginLbl, 1, 9);	
-		
-		scene = new Scene(bp, 720, 500);
-	}
-	
-	private void layouting() {
-		
-	}
-	
-	public void start(Stage registerStage) throws Exception {
-		// TODO Auto-generated method stub
-		initialize();
-		layouting();
-		registerStage.setScene(scene);
-		registerStage.setTitle("Register");
-		registerStage.show();
-	}
+        alert.showAndWait();
+    }
 
-
-	
-	
-
+    public static void main(String[] args) {
+        launch(args);
+    }
 }
