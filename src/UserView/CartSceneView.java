@@ -1,10 +1,7 @@
 package UserView;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-
 import Controller.CartSceneViewController;
 import View.LoginView;
 import javafx.application.Application;
@@ -18,6 +15,24 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+
+/**
+ * CartSceneView.java
+ *
+ * User view for managing cart items and making purchases.
+ *
+ * REVAMP NOTES:
+ * - deleteCartFromDatabase() had hardcoded DriverManager.getConnection() pointing
+ *   to wrong database (seruput_teh_db) with empty password.
+ * - Refactored to delegate to CartSceneViewController.getInstance().deleteCartFromDatabase()
+ *   instead of duplicating the logic.
+ * - Removed unused imports: java.sql.DriverManager, java.sql.PreparedStatement.
+ *
+ * KNOWN ISSUES (to be fixed):
+ * - deleteCartFromDatabase() called twice in removeFromCart() — redundant call.
+ * - quantity parsing via charAt(0) breaks if quantity > 9.
+ * - addToCartBtn in AdminHomeView is created but has no action handler.
+ */
 
 public class CartSceneView extends Application {
 	
@@ -413,16 +428,7 @@ public class CartSceneView extends Application {
     }
     
     private void deleteCartFromDatabase(String productID) {
-        try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
-            String query = "DELETE FROM cart WHERE productID = ?";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, productID);
-                preparedStatement.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        CartSceneViewController.getInstance().deleteCartFromDatabase(productID);
     }
     
     private void showFailedTransactionAlert(String message) {

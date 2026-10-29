@@ -1,11 +1,9 @@
 package Controller;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import Model.Database;
 import Model.Product;
 import Model.TransactionDetail;
@@ -13,6 +11,25 @@ import Model.User;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ListView;
+
+/**
+ * CartSceneViewController.java
+ *
+ * Controller for managing cart, transaction, and purchase operations.
+ *
+ * REVAMP NOTES:
+ * - 5 methods had hardcoded DriverManager.getConnection() pointing to wrong
+ *   database (seruput_teh_db) with empty password.
+ * - Fixed methods: moveCartToTransaction(), savePurchaseToDatabase(),
+ *   updatePurchaseToDatabase(), deleteCartFromDatabase(), fetchItemsInTransaction().
+ * - All now use Database.getInstance().getConnection().
+ * - Removed unused import: java.sql.DriverManager.
+ *
+ * KNOWN ISSUES (to be fixed):
+ * - updateCartItem() has hardcoded userID "CU001".
+ * - fetchProductData() and fetchUserData() duplicated from HomeViewController.
+ * - quantity parsing via charAt(0) breaks if quantity > 9.
+ */
 
 public class CartSceneViewController {
     private static final CartSceneViewController instance = new CartSceneViewController();
@@ -65,20 +82,14 @@ public class CartSceneViewController {
     
     public void moveCartToTransaction(String userID) {
         try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
-
+            Connection connection = Database.getInstance().getConnection();
             connection.setAutoCommit(false);
-
             String transactionID = getNewTransactionID(connection);
- 
             moveDataTotransaction_header(connection, transactionID, userID);
             moveDataTotransaction_detail(connection, transactionID);
-
             clearCart(connection, userID);
-
             connection.commit();
             connection.setAutoCommit(true);
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -220,18 +231,14 @@ public class CartSceneViewController {
     
     public void savePurchaseToDatabase(String productID, String userID, int quantity) {
         try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
-            
+            Connection connection = Database.getInstance().getConnection();
             if (!isPurchaseExists(connection, productID, userID)) {
                 String insertQuery = "INSERT INTO cart (productID, userID, quantity) VALUES (?, ?, ?)";
-                try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery)) {
-                    insertStatement.setString(1, productID);
-                    insertStatement.setString(2, userID);
-                    insertStatement.setInt(3, quantity);
-                    insertStatement.executeUpdate();
-                }
-            } else {
-                System.out.println("");
+                PreparedStatement ps = connection.prepareStatement(insertQuery);
+                ps.setString(1, productID);
+                ps.setString(2, userID);
+                ps.setInt(3, quantity);
+                ps.executeUpdate();
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -240,29 +247,20 @@ public class CartSceneViewController {
     
     public void updatePurchaseToDatabase(String productID, String userID, int newQuantity) {
         try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
+            Connection connection = Database.getInstance().getConnection();
             String selectQuery = "SELECT * FROM cart WHERE productID = ? AND userID = ?";
             String updateQuery = "UPDATE cart SET quantity = ? WHERE productID = ? AND userID = ?";
-            try (PreparedStatement selectStatement = connection.prepareStatement(selectQuery);
-                 PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
-
-                selectStatement.setString(1, productID);
-                selectStatement.setString(2, userID);
-
-                ResultSet resultSet = selectStatement.executeQuery();
-
-                if (resultSet.next()) {
-                    int existingQuantity = resultSet.getInt("quantity");
-                    int totalQuantity = existingQuantity + newQuantity;
-
-                    updateStatement.setInt(1, totalQuantity);
-                    updateStatement.setString(2, productID);
-                    updateStatement.setString(3, userID);
-
-                    updateStatement.executeUpdate();
-                } else {
-                    System.out.println("Item not found in the database.");
-                }
+            PreparedStatement selectPs = connection.prepareStatement(selectQuery);
+            PreparedStatement updatePs = connection.prepareStatement(updateQuery);
+            selectPs.setString(1, productID);
+            selectPs.setString(2, userID);
+            ResultSet rs = selectPs.executeQuery();
+            if (rs.next()) {
+                int totalQuantity = rs.getInt("quantity") + newQuantity;
+                updatePs.setInt(1, totalQuantity);
+                updatePs.setString(2, productID);
+                updatePs.setString(3, userID);
+                updatePs.executeUpdate();
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -335,12 +333,11 @@ public class CartSceneViewController {
     
     public void deleteCartFromDatabase(String productID) {
         try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
+            Connection connection = Database.getInstance().getConnection();
             String query = "DELETE FROM cart WHERE productID = ?";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, productID);
-                preparedStatement.executeUpdate();
-            }
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, productID);
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -421,19 +418,18 @@ public class CartSceneViewController {
     public ObservableList<String> fetchItemsInTransaction(String transactionID) {
         ObservableList<String> itemsInTransaction = FXCollections.observableArrayList();
         try {
+            Connection connection = Database.getInstance().getConnection();
             String query = "SELECT productID, quantity FROM transaction_detail WHERE transactionID = ?";
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, transactionID);
-                ResultSet resultSet = preparedStatement.executeQuery();
-                while (resultSet.next()) {
-                    String productID = resultSet.getString("productID");
-                    int quantity = resultSet.getInt("quantity");
-                    String productName = getProductFromID(productID);
-                    int productPrice = CartSceneViewController.getInstance().getProductPrice(productName);
-                    int totalPrice = productPrice * quantity;
-                    itemsInTransaction.add(quantity + "x " + productName + " (" + totalPrice + ")");
-                }
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, transactionID);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                String productID = rs.getString("productID");
+                int quantity = rs.getInt("quantity");
+                String productName = getProductFromID(productID);
+                int productPrice = CartSceneViewController.getInstance().getProductPrice(productName);
+                int totalPrice = productPrice * quantity;
+                itemsInTransaction.add(quantity + "x " + productName + " (" + totalPrice + ")");
             }
         } catch (SQLException e) {
             e.printStackTrace();

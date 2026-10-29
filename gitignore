@@ -1,0 +1,12 @@
+# Database credentials — never commit real credentials
+db.properties
+
+# Eclipse project files
+.classpath
+.project
+.settings/
+bin/
+
+# OS files
+.DS_Store
+Thumbs.db

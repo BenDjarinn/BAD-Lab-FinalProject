@@ -1,5 +1,7 @@
 package Model;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -7,51 +9,67 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Properties;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-
+/**
+ * Database.java
+ *
+ * Singleton class to manage a single shared MySQL database connection.
+ *
+ * REVAMP NOTES:
+ * - All fields changed from public to private to enforce proper encapsulation.
+ * - Previously, multiple View and Controller classes had their own hardcoded
+ *   DriverManager.getConnection() calls (17 instances across 6 files).
+ *   All connections now go through Database.getInstance().getConnection().
+ * - Database credentials are now loaded from db.properties (excluded from
+ *   version control via .gitignore). Copy db.properties.example to
+ *   db.properties and fill in your credentials before running.
+ */
 
 public class Database {
 
-	private static Database database;
-	public Connection connection;
-	public Statement statement;
-	public ResultSet resultSet;
-	public ResultSetMetaData resultMeta;
-	public PreparedStatement preparedStatement;
+    private static Database database;
+    private Connection connection;
+    private Statement statement;
+    private ResultSet resultSet;
+    private ResultSetMetaData resultMeta;
+    private PreparedStatement preparedStatement;
 
-	
-	public Database() {
-	
-		try {
-			String url = "jdbc:mysql://localhost:3306/seruput_teh_db";
-			String user = "root";
-			String password = "";
-			
-			Class.forName("com.mysql.cj.jdbc.Driver");
-			connection = DriverManager.getConnection(url, user, password);
- 
-			statement = connection.createStatement();
-		
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		
-	}
-	
-	public static Database getInstance() {
-		if(database == null) {
-			database = new Database();
-		}
-		
-		return database;
-	}
-	
-	public ResultSet executeQuery(String query) {
+    public Database() {
+        try {
+            Properties props = new Properties();
+            InputStream input = Database.class.getClassLoader().getResourceAsStream("db.properties");
+
+            if (input == null) {
+                throw new IOException(
+                    "db.properties not found. " +
+                    "Copy db.properties.example to db.properties and fill in your credentials."
+                );
+            }
+
+            props.load(input);
+
+            String url      = props.getProperty("db.url");
+            String user     = props.getProperty("db.user");
+            String password = props.getProperty("db.password");
+
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            connection = DriverManager.getConnection(url, user, password);
+            statement  = connection.createStatement();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Database getInstance() {
+        if (database == null) {
+            database = new Database();
+        }
+        return database;
+    }
+
+    public ResultSet executeQuery(String query) {
         try {
             return statement.executeQuery(query);
         } catch (SQLException e) {
@@ -59,71 +77,17 @@ public class Database {
             return null;
         }
     }
-	
-	public void closeConnection() {
+
+    public void closeConnection() {
         try {
-            if (statement != null) {
-                statement.close();
-            }
-            if (connection != null) {
-                connection.close();
-            }
+            if (statement != null) statement.close();
+            if (connection != null) connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-	
-	
 
-//	public ResultSet getData() {
-//		try {	
-//			preparedStatement = connection.prepareStatement("SELECT * FROM product;");
-//			
-//			resultSet = preparedStatement.executeQuery();
-//			resultMeta = resultSet.getMetaData();
-//
-//		}catch (Exception e) {
-//			//TODO: handle exception
-//			System.out.println("failed to load to get data");
-//		}
-//		
-//		return resultSet;
-//
-//	}
-
-	public Connection getConnection() {
+    public Connection getConnection() {
         return connection;
     }
-
-
-	
-	
-	
-	
-	
-
-	
-	
-}	
-
-
-//public ResultSet getData() {
-//try {
-//	statement = connection.createStatement();
-//	String sql = "SELECT * FROM product";
-//	
-//	resultSet = statement.executeQuery(sql);
-//	this.productData = FXCollections.observableArrayList();
-//	
-//	
-//
-//}catch (Exception e) {
-//	//TODO: handle exception
-//	System.out.println("failed to load to get data");
-//}
-//
-//return resultSet;
-//
-//
-//}
-	
+}

@@ -1,7 +1,6 @@
 package View;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,6 +26,18 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
+
+/**
+ * LoginView.java
+ *
+ * Handles the login screen UI and authentication logic.
+ *
+ * REVAMP NOTES:
+ * - isValidCredentials() and getUserRole() previously had their own hardcoded
+ *   DriverManager.getConnection() calls with wrong database name (seruput_teh_db).
+ * - Both methods now use Database.getInstance().getConnection() for consistency.
+ * - Removed unused import: java.sql.DriverManager.
+ */
 
 public class LoginView extends Application{
 	
@@ -174,21 +185,16 @@ public class LoginView extends Application{
     }
 	
 	public String getUserRole(String username) {
-	    try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "")) {
+	    try {
+	        Connection connection = Database.getInstance().getConnection();
 	        String query = "SELECT role FROM user WHERE username = ?";
-	        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-	            preparedStatement.setString(1, username);
-
-	            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-	                if (resultSet.next()) {
-	                    return resultSet.getString("role");
-	                }
-	            }
-	        }
+	        PreparedStatement ps = connection.prepareStatement(query);
+	        ps.setString(1, username);
+	        ResultSet rs = ps.executeQuery();
+	        if (rs.next()) return rs.getString("role");
 	    } catch (SQLException e) {
 	        e.printStackTrace();
 	    }
-
 	    return null;
 	}
 
@@ -223,24 +229,20 @@ public class LoginView extends Application{
     }
 	
 	
-	 private boolean isValidCredentials(String username, String password) {
-	        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "")) {
-	            String query = "SELECT * FROM user WHERE username = ? AND password = ?";
-	            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-	                preparedStatement.setString(1, username);
-	                preparedStatement.setString(2, password);
-
-	                try (ResultSet resultSet = preparedStatement.executeQuery()) {
-	                    return resultSet.next(); 
-	                }
-	            }
-	            
-	            
-	         } catch (SQLException e) {
-	            e.printStackTrace(); 
-	            return false;
-	        }
+	private boolean isValidCredentials(String username, String password) {
+	    try {
+	        Connection connection = Database.getInstance().getConnection();
+	        String query = "SELECT * FROM user WHERE username = ? AND password = ?";
+	        PreparedStatement ps = connection.prepareStatement(query);
+	        ps.setString(1, username);
+	        ps.setString(2, password);
+	        ResultSet rs = ps.executeQuery();
+	        return rs.next();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
 	    }
+	}
 	 
 	 
 

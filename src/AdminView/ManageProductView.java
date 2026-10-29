@@ -1,7 +1,6 @@
 package AdminView;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,6 +33,23 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+
+/**
+ * ManageProductView.java
+ *
+ * Admin view for managing products (add, update, delete).
+ *
+ * REVAMP NOTES:
+ * - 5 methods had hardcoded DriverManager.getConnection() pointing to wrong
+ *   database (seruput_teh_db) with empty password.
+ * - Fixed methods: generateNextProductID(), saveProductToDatabase(),
+ *   updateProductPrice(), deleteProductFromDatabase(), isProductNameUnique().
+ * - All now use Database.getInstance().getConnection().
+ * - Removed unused import: java.sql.DriverManager.
+ *
+ * KNOWN ISSUES (to be fixed):
+ * - Update Product form only allows price update, should allow full product edit.
+ */
 
 public class ManageProductView extends Application {
 
@@ -399,23 +415,21 @@ public class ManageProductView extends Application {
     }
     
     private String generateNextProductID() {
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "")) {
+        try {
+            Connection connection = Database.getInstance().getConnection();
             String sql = "SELECT productID FROM product ORDER BY productID DESC LIMIT 1";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                ResultSet resultSet = preparedStatement.executeQuery();
-                if (resultSet.next()) {
-                    String lastProductID = resultSet.getString("productID");
-                    int lastProductNumber = Integer.parseInt(lastProductID.substring(2));
-                    int nextProductNumber = lastProductNumber + 1;
-                    
-                    return String.format("TE%03d", nextProductNumber);
-                } else {
-                    return "TE001";
-                }
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                String lastID = rs.getString("productID");
+                int lastNum = Integer.parseInt(lastID.substring(2));
+                return String.format("TE%03d", lastNum + 1);
+            } else {
+                return "TE001";
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            return null; 
+            return null;
         }
     }
     
@@ -475,17 +489,15 @@ public class ManageProductView extends Application {
     }
     
     private void saveProductToDatabase(String productID, String productName, int productPrice, String productDesc) {
-    	
-    	try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
+        try {
+            Connection connection = Database.getInstance().getConnection();
             String query = "INSERT INTO product (productID, product_name, product_price, product_des) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, productID);
-                preparedStatement.setString(2, productName);
-                preparedStatement.setInt(3, productPrice);
-                preparedStatement.setString(4, productDesc);
-                preparedStatement.executeUpdate();
-            }
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, productID);
+            ps.setString(2, productName);
+            ps.setInt(3, productPrice);
+            ps.setString(4, productDesc);
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -493,13 +505,12 @@ public class ManageProductView extends Application {
     
     private void updateProductPrice(String productID, int newPrice) {
         try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
+            Connection connection = Database.getInstance().getConnection();
             String query = "UPDATE product SET product_price = ? WHERE productID = ?";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, newPrice);
-                preparedStatement.setString(2, productID);
-                preparedStatement.executeUpdate();
-            }
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setInt(1, newPrice);
+            ps.setString(2, productID);
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -507,12 +518,11 @@ public class ManageProductView extends Application {
     
     private void deleteProductFromDatabase(String productName) {
         try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
+            Connection connection = Database.getInstance().getConnection();
             String query = "DELETE FROM product WHERE product_name = ?";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, productName);
-                preparedStatement.executeUpdate();
-            }
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, productName);
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -520,13 +530,12 @@ public class ManageProductView extends Application {
     
     private boolean isProductNameUnique(String productName) {
         try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
+            Connection connection = Database.getInstance().getConnection();
             String query = "SELECT * FROM product WHERE product_name = ?";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, productName);
-                ResultSet resultSet = preparedStatement.executeQuery();
-                return !resultSet.next(); 
-            }
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, productName);
+            ResultSet rs = ps.executeQuery();
+            return !rs.next();
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

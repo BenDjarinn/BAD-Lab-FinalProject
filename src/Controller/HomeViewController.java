@@ -1,7 +1,6 @@
 package Controller;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import Model.Database;
@@ -10,6 +9,22 @@ import Model.User;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Label;
+
+/**
+ * HomeViewController.java
+ *
+ * Controller for handling product and user data operations.
+ *
+ * REVAMP NOTES:
+ * - fetchTransactionID() had hardcoded DriverManager.getConnection() pointing
+ *   to wrong database (seruput_teh_db) with empty password.
+ * - Now uses Database.getInstance().getConnection().
+ * - Removed unused import: java.sql.DriverManager.
+ *
+ * KNOWN ISSUES (to be fixed):
+ * - fetchProductData() and fetchUserData() are duplicated in CartSceneViewController.
+ * - handleProductSelection() has hardcoded name "Welcome, Stefanie".
+ */
 
 public class HomeViewController {
 	
@@ -41,18 +56,13 @@ public class HomeViewController {
     public ObservableList<String> fetchTransactionID(String userID) {
         ObservableList<String> transactionList = FXCollections.observableArrayList();
         try {
+            Connection connection = Database.getInstance().getConnection();
             String query = "SELECT transactionID FROM transaction_header WHERE userID = ?";
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/seruput_teh_db", "root", "");
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            	preparedStatement.setString(1, userID);
-            	ResultSet resultSet = preparedStatement.executeQuery();
-            	
-            	while (resultSet.next()) {
-                    String transactionID = resultSet.getString("transactionID");
-                    transactionList.add(transactionID);
-                }
-            
-           
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, userID);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                transactionList.add(rs.getString("transactionID"));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -61,8 +71,6 @@ public class HomeViewController {
     }
 
     
-    
-
     public ObservableList<Product> fetchProductData() {
         ObservableList<Product> productData = FXCollections.observableArrayList();
         try {

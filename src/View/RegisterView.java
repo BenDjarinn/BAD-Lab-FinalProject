@@ -169,11 +169,11 @@ public class RegisterView extends Application {
             else if(!password.equals(confirmPassword)) {
             	showAlert("Confirm password must equals to password.");
             }
-            else if (phoneNumber.matches("^[a-zA-Z0-9]*$")) {
+            else if (!phoneNumber.matches("[0-9+]+")) {
                 showAlert("Phone Number must be numeric.");
             }
-            else if(!phoneNumber.matches("\\+62[0-9]+")) {
-            	showAlert("Phone number must start with ‘+62’.");
+            else if (!phoneNumber.matches("\\+62[0-9]+") && !phoneNumber.matches("08[0-9]+")) {
+                showAlert("Phone number must start with '+62' or '08'.");
             }
             else {
             	showSuccessAlert("Registered Successfully!");
